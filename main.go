@@ -21,7 +21,10 @@ import (
 	"unicode"
 )
 
-var elog = log.New(newLogtab(os.Stderr), brush.Red("[error] ").String(), 0)
+var (
+	pkgname = "staticfs"
+	elog    = log.New(newLogtab(os.Stderr), brush.Red("[error] ").String(), 0)
+)
 
 func main() {
 
@@ -34,6 +37,11 @@ func main() {
 usage: %s [dirnames]`, os.Args[0])
 		return
 	}
+
+	if err := os.Mkdir(pkgname, 0744); err != nil {
+		elog.Fatalf("Couldn't create package directory: %v", err)
+	}
+	log.Printf("Created directory for package %q", pkgname)
 	for _, arg := range os.Args[1:] {
 
 		err := writeDirectory(arg)
@@ -88,7 +96,7 @@ func writeDirectory(dirname string) error {
 		return err
 	}
 
-	destfilename := snakify(dirname) + ".go"
+	destfilename := filepath.Join(pkgname, snakify(dirname)+".go")
 	destfunction := camelize(dirname)
 
 	log.Printf("saving to %q, usable with function Get%s", destfilename, destfunction)
@@ -99,11 +107,13 @@ func writeDirectory(dirname string) error {
 	}
 
 	err = filetempl.Execute(file, struct {
-		RootMap  map[string]string
+		PkgName  string
 		RootName string
+		RootMap  map[string]string
 	}{
-		RootMap:  fakefs,
+		PkgName:  pkgname,
 		RootName: destfunction,
+		RootMap:  fakefs,
 	})
 	if err != nil {
 		_ = file.Close()
@@ -169,10 +179,9 @@ func camelize(input string) string {
 	return out.String()
 }
 
-var filetempl = template.Must(template.New("file").Parse(`package staticfs
+var filetempl = template.Must(template.New("file").Parse(`package {{.PkgName}}
 
 import (
-    "bufio"
     "bytes"
     "compress/gzip"
     "encoding/base64"
@@ -189,7 +198,7 @@ import (
 //
 func Get{{.RootName}}(filename string) (io.ReadSeeker, bool) {
     data, ok := decompressed{{.RootName}}[filename]
-    return bufio.NewReader(data), ok
+    return bytes.NewReader(data), ok
 }
 
 var decompressed{{.RootName}} = make(map[string][]byte)
