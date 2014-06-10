@@ -4,18 +4,17 @@ import (
     "bytes"
     "compress/gzip"
     "encoding/base64"
-    "io"
     "io/ioutil"
     "log"
 )
 
-// Get{{.RootName}} will lookup the static assets. It returns an io.ReadSeeker
+// Get{{.RootName}} will lookup the static assets. It returns a *bytes.Reader
 // and true if found, false otherwise. The static assets contain exactly the
 // following entries:
 // {{range $name, $data := .RootMap}}
 //   {{$name}}{{end}}
 //
-func Get{{.RootName}}(filename string) (io.ReadSeeker, bool) {
+func Get{{.RootName}}(filename string) (*bytes.Reader, bool) {
     data, ok := decompressed{{.RootName}}[filename]
     return bytes.NewReader(data), ok
 }
