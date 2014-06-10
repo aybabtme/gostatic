@@ -16,7 +16,7 @@ import (
 	"unicode"
 )
 
-var elog = log.New(newLogtab(os.Stderr), brush.Red("[error] ").String(), log.Lshortfile)
+var elog = log.New(newLogtab(os.Stderr), brush.Red("[error] ").String(), 0)
 
 func main() {
 
@@ -24,15 +24,16 @@ func main() {
 	log.SetPrefix(brush.Blue("[info] ").String())
 	log.SetFlags(0)
 
-	if len(os.Args) < 1 {
-		log.Fatal("Need to specify a directory")
+	if len(os.Args) < 2 {
+		elog.Fatalf(`Need to specify at least one directory.
+usage: %s [dirnames]`, os.Args[0])
 		return
 	}
 	for _, arg := range os.Args[1:] {
 
 		err := writeDirectory(arg)
 		if err != nil {
-			log.Printf("Failed to snapshot %q, %v", arg, err)
+			elog.Printf("Failed to snapshot %q, %v", arg, err)
 		}
 
 	}
@@ -51,7 +52,7 @@ func writeDirectory(dirname string) error {
 
 		data, err := ioutil.ReadFile(name)
 		if err != nil {
-			log.Printf("couldn't read %q: %v", name, err)
+			elog.Printf("couldn't read %q: %v", name, err)
 			return err
 		}
 
@@ -60,10 +61,10 @@ func writeDirectory(dirname string) error {
 		gw := gzip.NewWriter(buf)
 
 		if _, err = gw.Write(data); err != nil {
-			log.Printf("couldn't compress %q: %v", name, err)
+			elog.Printf("couldn't compress %q: %v", name, err)
 		}
 		if gw.Close(); err != nil {
-			log.Printf("couldn't close compressed %q: %v", name, err)
+			elog.Printf("couldn't close compressed %q: %v", name, err)
 		}
 		compressSize += buf.Len()
 
@@ -130,7 +131,7 @@ func snakify(input string) string {
 	out := bytes.NewBuffer(nil)
 	lastWasSnake := true
 
-	for _, r := range []rune(input) {
+	for i, r := range []rune(input) {
 
 		switch {
 		case unicode.IsLetter(r):
@@ -138,7 +139,7 @@ func snakify(input string) string {
 			lastWasSnake = false
 		case lastWasSnake:
 			// skip it
-		default:
+		case i != len(input)-1:
 			out.WriteRune('_')
 		}
 	}
