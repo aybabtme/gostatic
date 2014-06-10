@@ -2,6 +2,12 @@
 Command gostatic takes a list of directories, compresses all their
 file's content and puts them in a Go file to be included into your
 project.
+
+The file will be in a package named `staticfs` and will have methods
+exposing the filepaths in the list of directories you provided. The
+data is compressed and decompressed at init time, which means that
+the bundled data is typically _smaller_ than the original one
+living on your filesystem.
 */
 package main
 
