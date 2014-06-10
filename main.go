@@ -1,3 +1,8 @@
+/*
+Command gostatic takes a list of directories, compresses all their
+file's content and puts them in a Go file to be included into your
+project.
+*/
 package main
 
 import (
