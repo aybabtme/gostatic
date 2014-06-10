@@ -1,0 +1,50 @@
+package staticfs
+
+import (
+    "bufio"
+    "bytes"
+    "compress/gzip"
+    "encoding/base64"
+    "io"
+    "io/ioutil"
+    "log"
+)
+
+// Get{{.RootName}} will lookup the static assets. It returns an io.ReadSeeker
+// and true if found, false otherwise. The static assets contain exactly the
+// following entries:
+// {{range $name, $data := .RootMap}}
+//   {{$name}}{{end}}
+//
+func Get{{.RootName}}(filename string) (io.ReadSeeker, bool) {
+    data, ok := decompressed{{.RootName}}[filename]
+    return bufio.NewReader(data), ok
+}
+
+var decompressed{{.RootName}} = make(map[string][]byte)
+
+func init() {
+
+    var compressed = [...]struct {
+        name   string
+        gzip64 string
+    }{ {{range $name, $data := .RootMap}}
+        {"{{$name}}", "{{$data}}"},{{end}}
+    }
+
+    for _, file := range compressed {
+        gzipdata, err := base64.StdEncoding.DecodeString(file.gzip64)
+        if err != nil {
+            log.Panicf("Couldn't decode base64 data for %q: %v", file.name, err)
+        }
+        gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
+        if err != nil {
+            log.Panicf("Couldn't open gzip stream for data for %q: %v", file.name, err)
+        }
+        data, err := ioutil.ReadAll(gr)
+        if err != nil {
+            log.Panicf("Couldn't decompress gzip data in %q: %v", file.name, err)
+        }
+        decompressed{{.RootName}}[file.name] = data
+    }
+}
