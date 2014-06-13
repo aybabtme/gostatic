@@ -45,7 +45,7 @@ func init() {
         buf := bytes.NewBufferString(src)
         for buf.Len() != 0 {
             r, _, _ := buf.ReadRune()
-            dst.WriteByte(byte(r - base256))
+            _, _ = dst.WriteByte(byte(r - base256))
         }
         return dst.Bytes()
     }

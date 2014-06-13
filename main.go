@@ -86,7 +86,7 @@ func writeDirectory(dirname string) error {
 		if _, err = gw.Write(data); err != nil {
 			elog.Printf("couldn't compress %q: %v", name, err)
 		}
-		if gw.Close(); err != nil {
+		if err := gw.Close(); err != nil {
 			elog.Printf("couldn't close compressed %q: %v", name, err)
 		}
 		compressSize += buf.Len()
@@ -160,12 +160,12 @@ func snakify(input string) string {
 
 		switch {
 		case unicode.IsLetter(r):
-			out.WriteRune(r)
+			_, _ = out.WriteRune(r)
 			lastWasSnake = false
 		case lastWasSnake:
 			// skip it
 		case i != len(input)-1:
-			out.WriteRune('_')
+			_, _ = out.WriteRune('_')
 		}
 	}
 	return out.String()
@@ -178,10 +178,10 @@ func camelize(input string) string {
 
 		switch {
 		case unicode.IsLetter(r) && needCamel:
-			out.WriteRune(unicode.ToUpper(r))
+			_, _ = out.WriteRune(unicode.ToUpper(r))
 			needCamel = false
 		case unicode.IsLetter(r) && !needCamel:
-			out.WriteRune(r)
+			_, _ = out.WriteRune(r)
 		default:
 			needCamel = true
 		}
@@ -236,7 +236,7 @@ func init() {
 		buf := bytes.NewBufferString(src)
 		for buf.Len() != 0 {
 			r, _, _ := buf.ReadRune()
-			dst.WriteByte(byte(r - base256))
+			_ = dst.WriteByte(byte(r - base256))
 		}
 		return dst.Bytes()
 	}
