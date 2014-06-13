@@ -109,7 +109,7 @@ func writeDirectory(dirname string) error {
 	destfilename := filepath.Join(pkgname, snakify(dirname)+".go")
 	destfunction := camelize(dirname)
 
-	log.Printf("saving to %q, usable with function Get%s", destfilename, destfunction)
+	log.Printf("saving to %q, usable with function Get%s and List%s", destfilename, destfunction, destfunction)
 
 	file, err := os.Create(destfilename)
 	if err != nil {
