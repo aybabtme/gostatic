@@ -3,6 +3,23 @@
 Command `gostatic` takes a list of directories and create a Go file
 containing all of those directories that you can include in your project.
 
+```bash
+$ gostatic -pkgname helloworld static/
+[info] Created directory for package "helloworld"
+[info] 15KB ->  3.4KB   "static/css/bootstrap-theme.css"
+[info] 38KB ->  16KB    "static/css/bootstrap-theme.css.map"
+[info] 13KB ->  3.3KB   "static/css/bootstrap-theme.min.css"
+# ....
+[info] saving to "helloworld/static.go", usable with functions GetStatic and ListStatic
+```
+
+# Features
+
+* Gives out handy `bytes.Reader`.
+* Encode the result over 256 bytes, saving space in your binary.
+* Compress data with gzip.
+* Decompresses on init.
+
 # Example
 
 Say we have a `static` folder containing typical assets:
