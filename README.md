@@ -16,8 +16,8 @@ $ gostatic -pkgname helloworld static/
 # Features
 
 * Gives out handy `bytes.Reader`.
-* Encode the result over 256 bytes, saving space in your binary.
-* Compress data with gzip.
+* Encodes the result over 256 bytes, saving space in your binary.
+* Compresses data with gzip.
 * Decompresses on init.
 
 # Example
