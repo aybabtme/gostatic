@@ -3,7 +3,6 @@ package {{.PkgName}}
 import (
     "bytes"
     "compress/gzip"
-    "encoding/base64"
     "io/ioutil"
     "log"
 )
@@ -19,22 +18,40 @@ func Get{{.RootName}}(filename string) (*bytes.Reader, bool) {
     return bytes.NewReader(data), ok
 }
 
+// List{{.RootName}} will return all the static assets sharing root
+// {{.RootName}}.
+func List{{.RootName}}() (map[string]*bytes.Reader) {
+    out := make(map[string]*bytes.Reader, len(decompressed{{.RootName}}))
+    for k, v := range decompressed{{.RootName}} {
+        out[k] = bytes.NewReader(v)
+    }
+    return out
+}
+
 var decompressed{{.RootName}} = make(map[string][]byte)
 
 func init() {
 
     var compressed = [...]struct {
         name   string
-        gzip64 string
+        gzip256 string
     }{ {{range $name, $data := .RootMap}}
-        {"{{$name}}", "{{$data}}"},{{end}}
+        {"{{$name}}", `{{$data}}`},{{end}}
+    }
+
+    base256 := 'a'
+    decode := func(src string) []byte {
+        dst := bytes.NewBuffer(make([]byte, 0, len(src)))
+        buf := bytes.NewBufferString(src)
+        for buf.Len() != 0 {
+            r, _, _ := buf.ReadRune()
+            dst.WriteByte(byte(r - base256))
+        }
+        return dst.Bytes()
     }
 
     for _, file := range compressed {
-        gzipdata, err := base64.StdEncoding.DecodeString(file.gzip64)
-        if err != nil {
-            log.Panicf("Couldn't decode base64 data for %q: %v", file.name, err)
-        }
+        gzipdata := decode(file.gzip256)
         gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
         if err != nil {
             log.Panicf("Couldn't open gzip stream for data for %q: %v", file.name, err)

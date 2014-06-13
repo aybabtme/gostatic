@@ -14,7 +14,8 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
+	"flag"
+	"github.com/aybabtme/base256"
 	"github.com/aybabtme/color/brush"
 	"github.com/dustin/go-humanize"
 	"io"
@@ -34,11 +35,14 @@ var (
 
 func main() {
 
+	flag.StringVar(&pkgname, "pkgname", "staticfs", "name of the package to create")
+	flag.Parse()
+
 	log.SetOutput(newLogtab(os.Stdout))
 	log.SetPrefix(brush.Blue("[info] ").String())
 	log.SetFlags(0)
 
-	if len(os.Args) < 2 {
+	if len(flag.Args()) < 1 {
 		elog.Fatalf(`Need to specify at least one directory.
 usage: %s [dirnames]`, os.Args[0])
 		return
@@ -48,7 +52,7 @@ usage: %s [dirnames]`, os.Args[0])
 		elog.Fatalf("Couldn't create package directory: %v", err)
 	}
 	log.Printf("Created directory for package %q", pkgname)
-	for _, arg := range os.Args[1:] {
+	for _, arg := range flag.Args() {
 
 		err := writeDirectory(arg)
 		if err != nil {
@@ -87,13 +91,13 @@ func writeDirectory(dirname string) error {
 		}
 		compressSize += buf.Len()
 
-		gzip64data := base64.StdEncoding.EncodeToString(buf.Bytes())
+		gzip256data := base256.StdEncoding.EncodeToString(buf.Bytes())
 
-		fakefs[name] = gzip64data
+		fakefs[name] = gzip256data
 
 		log.Printf("%s\t->\t%s\t%q",
 			humanize.Bytes(uint64(len(data))),
-			humanize.Bytes(uint64(len(gzip64data))),
+			humanize.Bytes(uint64(len(gzip256data))),
 			name)
 
 		return nil
@@ -190,7 +194,6 @@ var filetempl = template.Must(template.New("file").Parse(`package {{.PkgName}}
 import (
     "bytes"
     "compress/gzip"
-    "encoding/base64"
     "io/ioutil"
     "log"
 )
@@ -206,23 +209,41 @@ func Get{{.RootName}}(filename string) (*bytes.Reader, bool) {
     return bytes.NewReader(data), ok
 }
 
+// List{{.RootName}} will return all the static assets sharing root
+// {{.RootName}}.
+func List{{.RootName}}() (map[string]*bytes.Reader) {
+	out := make(map[string]*bytes.Reader, len(decompressed{{.RootName}}))
+	for k, v := range decompressed{{.RootName}} {
+		out[k] = bytes.NewReader(v)
+	}
+	return out
+}
+
 var decompressed{{.RootName}} = make(map[string][]byte)
 
 func init() {
 
-    var compressed = [...]struct {
+	var compressed = [...]struct {
         name   string
-        gzip64 string
+        gzip256 string
     }{ {{range $name, $data := .RootMap}}
-        {"{{$name}}", "{{$data}}"},{{end}}
+        {"{{$name}}", ` + "`{{$data}}`" + `},{{end}}
     }
 
-    for _, file := range compressed {
-        gzipdata, err := base64.StdEncoding.DecodeString(file.gzip64)
-        if err != nil {
-            log.Panicf("Couldn't decode base64 data for %q: %v", file.name, err)
-        }
-        gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
+	base256 := 'a'
+	decode := func(src string) []byte {
+		dst := bytes.NewBuffer(make([]byte, 0, len(src)))
+		buf := bytes.NewBufferString(src)
+		for buf.Len() != 0 {
+			r, _, _ := buf.ReadRune()
+			dst.WriteByte(byte(r - base256))
+		}
+		return dst.Bytes()
+	}
+
+	for _, file := range compressed {
+		gzipdata := decode(file.gzip256)
+		gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
         if err != nil {
             log.Panicf("Couldn't open gzip stream for data for %q: %v", file.name, err)
         }
