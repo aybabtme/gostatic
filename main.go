@@ -14,8 +14,8 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"flag"
-	"github.com/aybabtme/base256"
 	"github.com/aybabtme/color/brush"
 	"github.com/dustin/go-humanize"
 	"io"
@@ -91,13 +91,13 @@ func writeDirectory(dirname string) error {
 		}
 		compressSize += buf.Len()
 
-		gzip256data := base256.StdEncoding.EncodeToString(buf.Bytes())
+		gzip64data := base64.StdEncoding.EncodeToString(buf.Bytes())
 
-		fakefs[name] = gzip256data
+		fakefs[name] = gzip64data
 
 		log.Printf("%s\t->\t%s\t%q",
 			humanize.Bytes(uint64(len(data))),
-			humanize.Bytes(uint64(len(gzip256data))),
+			humanize.Bytes(uint64(len(gzip64data))),
 			name)
 
 		return nil
@@ -194,6 +194,7 @@ var filetempl = template.Must(template.New("file").Parse(`package {{.PkgName}}
 import (
     "bytes"
     "compress/gzip"
+    "encoding/base64"
     "io/ioutil"
     "log"
 )
@@ -225,24 +226,16 @@ func init() {
 
 	var compressed = [...]struct {
         name   string
-        gzip256 string
+        gzip64 string
     }{ {{range $name, $data := .RootMap}}
         {"{{$name}}", ` + "`{{$data}}`" + `},{{end}}
     }
 
-	base256 := 'a'
-	decode := func(src string) []byte {
-		dst := bytes.NewBuffer(make([]byte, 0, len(src)))
-		buf := bytes.NewBufferString(src)
-		for buf.Len() != 0 {
-			r, _, _ := buf.ReadRune()
-			_ = dst.WriteByte(byte(r - base256))
-		}
-		return dst.Bytes()
-	}
-
 	for _, file := range compressed {
-		gzipdata := decode(file.gzip256)
+		gzipdata, err := base64.StdEncoding.DecodeString(file.gzip64)
+		if err != nil {
+            log.Panicf("Couldn't decode base64 data for %q: %v", file.name, err)
+        }
 		gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
         if err != nil {
             log.Panicf("Couldn't open gzip stream for data for %q: %v", file.name, err)

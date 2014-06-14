@@ -16,7 +16,6 @@ $ gostatic -pkgname helloworld static/
 # Features
 
 * Gives out handy `bytes.Reader`.
-* Encodes the result over 256 bytes, saving space in your binary.
 * Compresses data with gzip.
 * Decompresses on init.
 
@@ -114,6 +113,7 @@ package staticfs
 import (
     "bytes"
     "compress/gzip"
+    "encoding/base64"
     "io/ioutil"
     "log"
 )
@@ -163,38 +163,30 @@ func init() {
         name   string
         gzip256 string
     }{
-        {"static/css/bootstrap-theme.css", `ìiaajÏéaŠō¼¾Ðü­wğİĐÁ¶¶ÎäŚđÄńĞĹÏ ... truncated`},
-        {"static/css/bootstrap-theme.css.map", `ìiaajÏéaŠōÞlÔļĔŉÀĢň¯³Śçõī¤ ... truncated`},
-        {"static/css/bootstrap-theme.min.css", `ìiaajÏéaŠŅ»®ÐļtğŘ¸ŉ¦Œă®ÂĪś ... truncated`},
-        {"static/css/bootstrap.css", `ìiaajÏéaŠōĞÎôĚîřĞàæĽtïÿÿĊŖď³®­ŀŏÚ×~ĒĿ ... truncated`},
-        {"static/css/bootstrap.css.map", `ìiaajÏéaŠōĞlàŃēś¶ÝÛßô­¤ĿÐ×ŘĸĹy£ĳŅ ... truncated`},
-        {"static/css/bootstrap.min.css", `ìiaajÏéaŠōĞ¾ôńęĒřßßæĽttŎ÷ąğ¶ëĊŖ¾ ... truncated`},
-        {"static/css/rickshaw.min.css", `ìiaajÏéaŠý¹ŞÏČuàvĵČªČµāªÖhĻÜïÎċ}ê ... truncated`},
-        {"static/fonts/glyphicons-halflings-regular.eot", `ìiaajÏéaŠíŜ¶µ~À ... truncated`},
-        {"static/fonts/glyphicons-halflings-regular.svg", `ìiaajÏéaŠōÞÎðŅó ... truncated`},
-        {"static/fonts/glyphicons-halflings-regular.ttf", `ìiaajÏéaŠĭŞjÝ|Ķ ... truncated`},
-        {"static/fonts/glyphicons-halflings-regular.woff", `ìiaajÏéaŠÅØÔÑÇ ... truncated`},
-        {"static/index.go.html", `ìiaajÏéaŠĽ¸²ÐļqßŘĐÁĞcÒ¼ËōĦônÅ×ĳÇ¹ĸāįm¤âĳ ... truncated`},
-        {"static/js/bootstrap.min.js", `ìiaajÏéaŠĵÞŌÔļ§óřŘŞ© jĢèō®ŎwÊéöÙ ... truncated`},
-        {"static/js/cubism.v1.js", `ìiaajÏéaŠŅÞÌØļ§ēŁØŞkùĔĒġéå©ĺ÷ÎĲĕ°ďôúüÔ ... truncated`},
-        {"static/js/d3.js", `ìiaajÏéaŠŅĞŌ×¼óśŜŅėŚÖÛëĊĜuļôĬĥŀĹ¯¯õŏ¯»üŅ÷ĕÎóü ... truncated`},
-        {"static/js/jquery-2.1.0.min.js", `ìiaajÏéaŠĭĞÚÜ|ĨĲśŠŚuĥ¥¢¡ėÔŀmĥĖ× ... truncated`},
-        {"static/js/rickshaw.js", `ìiaajÏéaŠōĞŞàtóşÔŝ¸éĽÈüħįĪÝcåĜ¡řóĭŏőĪŅĹ ... truncated`},
-    }
-
-    base256 := 'a'
-    decode := func(src string) []byte {
-        dst := bytes.NewBuffer(make([]byte, 0, len(src)))
-        buf := bytes.NewBufferString(src)
-        for buf.Len() != 0 {
-            r, _, _ := buf.ReadRune()
-            dst.WriteByte(byte(r - base256))
-        }
-        return dst.Bytes()
+        {"static/css/bootstrap-theme.css", `H4sIAAAJbogA/+xbXW+bTBa+ .. truncated `},
+        {"static/css/bootstrap-theme.css.map", `H4sIAAAJbogA/+x9C3Pb .. truncated `},
+        {"static/css/bootstrap-theme.min.css", `H4sIAAAJbogA/+RaTW/b .. truncated `},
+        {"static/css/bootstrap.css", `H4sIAAAJbogA/+y9bZMjuY0w+L1/hd .. truncated `},
+        {"static/css/bootstrap.css.map", `H4sIAAAJbogA/+y9C3/iOLI4+l .. truncated `},
+        {"static/css/bootstrap.min.css", `H4sIAAAJbogA/+y9XZPjuLEo+H .. truncated `},
+        {"static/css/rickshaw.min.css", `H4sIAAAJbogA/5xY/W6rNhR/FdS .. truncated `},
+        {"static/fonts/glyphicons-halflings-regular.eot", `H4sIAAAJb .. truncated `},
+        {"static/fonts/glyphicons-halflings-regular.svg", `H4sIAAAJb .. truncated `},
+        {"static/fonts/glyphicons-halflings-regular.ttf", `H4sIAAAJb .. truncated `},
+        {"static/fonts/glyphicons-halflings-regular.woff", `H4sIAAAJ .. truncated `},
+        {"static/index.go.html", `H4sIAAAJbogA/9xXUW/bNhB+969gvQJxMV .. truncated `},
+        {"static/js/bootstrap.min.js", `H4sIAAAJbogA/9R963PbRpL49/0r .. truncated `},
+        {"static/js/cubism.v1.js", `H4sIAAAJbogA/+R9a3fbRrLgd/0KmLOx .. truncated `},
+        {"static/js/d3.js", `H4sIAAAJbogA/+S963ZbN5Iw+vvkKbb5dXo2LYo .. truncated `},
+        {"static/js/jquery-2.1.0.min.js", `H4sIAAAJbogA/8y9eXsbx9Ev+ .. truncated `},
+        {"static/js/rickshaw.js", `H4sIAAAJbogA/+y9/X8TOZIw/nP8V4jcP .. truncated `},
     }
 
     for _, file := range compressed {
-        gzipdata := decode(file.gzip256)
+        gzipdata, err := base64.StdEncoding.DecodeString(file.gzip256)
+        if err != nil {
+            log.Panicf("Couldn't decode base64 data for %q: %v", file.name, err)
+        }
         gr, err := gzip.NewReader(bytes.NewBuffer(gzipdata))
         if err != nil {
             log.Panicf("Couldn't open gzip stream for data for %q: %v", file.name, err)
